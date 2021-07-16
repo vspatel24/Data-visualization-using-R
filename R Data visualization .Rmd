@@ -1,0 +1,301 @@
+---
+title: "Data Visualization using R"
+Name: "Vanshika Patel"
+
+output:
+html_document:
+df_print: paged
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(rvest)
+library(lubridate)
+library(tidyverse)
+library(plotly)
+library(viridis) 
+library(RColorBrewer)
+library(ggplot2)
+library(htmlTable)
+nycbikes18 <- read_csv("~/Desktop/nyc data vis/data /2018-citibike-tripdata.csv",
+  locale = locale(tz = "America/New_York"))
+```
+
+
+
+
+
+
+```{r polish}
+
+"Data visualization using R. Data sourced from https://www.citibikenyc.com/system-data "
+
+
+"Using gg-plot on R I created a side-by-side boxplot to demonstrate the differences of trip durations across age groups colored by user types"
+
+
+
+
+
+nycbikes18_age<-nycbikes18
+nycbikes18_age$tripduration<-as.numeric(nycbikes18$tripduration/60)#as.numeric(as.difftime(nycbikes18$stoptime-nycbikes18$starttime), "mins")
+
+nycbikes18_age$birth_year[nycbikes18_age$birth_year<1900]<-NA_real_
+nycbikes18_age$age<-2018-nycbikes18_age$birth_year
+labs<-c('[0,14]', '(14,24]', '(24,44]', '(44,64]', '65+')
+nycbikes18_age$age_group <- cut(nycbikes18_age$age, breaks = c(0,15,25,45,65,Inf), labels = labs, right = FALSE)
+nycbikes18_age$gender<-as.character(nycbikes18_age$gender)
+
+
+
+p3 <- nycbikes18_age %>% 
+  ggplot(aes(age_group, tripduration)) +
+geom_boxplot(
+    aes(fill = usertype), 
+    alpha=0.5,
+    position = "dodge") +
+ scale_fill_manual(
+    values = c("#EF476F", "#FFD166")) +
+  scale_y_log10() + 
+  labs(x = "Age Group", y = "Trip in minutes", 
+       title = "Trip Durations Across Age Groups and different User-type",
+       subtitle = "The customer user-group seems to be higher average",
+       caption = "Data from citibikenyc.com" ) +
+  ftplottools::ft_theme() +
+  theme(
+    plot.title.position = "plot", 
+    plot.background = element_rect(fill = "#FFF1E0"))
+p3
+```
+
+```{r}
+"Gathering insights on the relationship between gender and trip duration"
+
+
+"Initially I was curious about finding more about the relationship beteween gender and trip duration"
+p1 <- nycbikes18_age %>% 
+ mutate(gender = fct_recode(fct_reorder(as_factor(gender), tripduration),
+    "unknown" = "0", "male" = "1", "female" = "2")) %>% 
+ggplot(aes(gender, tripduration)) +
+  geom_point(aes(color = gender)) +
+  geom_smooth(se = FALSE) +
+   labs(x = "Gender", y = "Trip in minutes", 
+       title = "Does Trip Duration Vary Across Genders?",
+       subtitle = "Plot Of Gender And Trip Duration",
+       caption = "Data from citibikenyc.com" ) +
+  ftplottools::ft_theme() +
+  theme(
+    plot.title.position = "plot", 
+    plot.background = element_rect(fill = "#FFF1E0")) +
+theme(legend.position = "bottom")
+  
+p1
+
+```
+
+'The question I had in mind while dwelling upon this exploration was regarding the relationship between gender and trip duration specifically. I wanted to dig deeper into the relationship between these two. I was interested in this as I wanted to understand if gender has an impact on trip duration. Hence started off with plots to visualize and better understand the relationship between these two variables. While doing this, I suddenly thought about " Do people of a particular gender within a certain age group have different trip duration?"From this question I was drawn to gain further insight on these three variables to answer my curiosity. As you can see from the plots I have provided some with gender and trip duration and some with gender ,trip-duration and age group. This is because I wanted to specifically observe how insights change once I add in age group. '
+
+
+
+```{r}
+
+"Second plot exploring relationship between gender, age group and trip duration"
+
+ p2 <- nycbikes18_age %>% 
+   mutate(gender = fct_recode(fct_reorder(as_factor(gender), tripduration),
+    "unknown" = "0", "male" = "1", "female" = "2")) %>% 
+ggplot(aes(age_group, tripduration)) +
+  geom_col( aes(fill = gender), position = "dodge") +
+   labs(x = "Age Group", y = "Trip Duration In Minutes", 
+       title = "Does Trip Duration Vary Across Genders And Age Group?",
+       subtitle = "Plot one Of Gender And Trip Duration",
+       caption = "Data from citibikenyc.com" ) +
+ scale_fill_brewer(palette = "BuPu")+
+  ftplottools::ft_theme() +
+  theme(
+    plot.title.position = "plot", 
+    plot.background = element_rect(fill = "#FFF1E0"))
+p2
+
+
+p3 <- nycbikes18_age %>% 
+mutate(gender = fct_recode(fct_reorder(as_factor(gender), tripduration),
+    "unknown" = "0", "male" = "1", "female" = "2")) %>% 
+ggplot(aes(gender, tripduration)) +
+  geom_col( aes(fill = age_group), position = "dodge") +
+  scale_fill_brewer(palette = "BuPu")+
+  labs(
+    x = "Gender",
+    y = "Trip Duration",
+    title = "Does Trip Duration Vary Across Genders And Age Group?",
+       subtitle = "Plot two of investigating relationship between age,gender and trip duration",
+       caption = "Data from citibikenyc.com",
+    
+    colour = "age_group"
+  ) +  ftplottools::ft_theme() +
+  theme(
+    plot.title.position = "plot", 
+    plot.background = element_rect(fill = "#FFF1E0")) +
+theme(legend.position = "bottom")
+p3
+
+```
+`
+-Note: Even though these plots are the same, I decided to keep both as I felt as if both plots tell different stories about the same reltionship but focuses on different variables which allowed me to better understand this data. For example NA has no representation in the first plot, whereas in the second one it does. 
+
+- In plot one it seems that the highest trip duration for both Unknown and Male is between 44-64 age group(in years). Whereas the highest trip duration (in minutes)for females tends to be in the 24-44 age group. The 65+ age group seems to not have the female group visible at all. It seems to be the lowest trip duration is in the 14-24 year group. It seems in general there is a slight trend of increasing trip duration in both male and female groups till 44,64 age group (where the female group decreases again), then it starts decreasing with 65 low for all groups. 
+
+-From the second polot We can see from this bar plot which illustrated the relationship between female, male,unknown and the four different age groups on Trip duration. From this graph, we can see that in males the age group of 44-64 year olds has the highest trip duration. Whereas, we can see for females the age group of 24-44 year olds seem to have the highest trip duration and 65 year olds is very low compared to that of male group. We can also see that there is quite a large difference between the 44-64 age group of males to that of females. There might be underlying causes here for that would be interesting to investigate further.
+-For the NA group the 44-64 age group has the highest trip duration ( in minutes) and the 65+ age group is basically not evident in this plot. 
+
+
+
+
+
+```{r}
+p3 <- nycbikes18_age %>% 
+  mutate(gender = fct_recode(fct_reorder(as_factor(gender), tripduration),
+    "unknown" = "0", "male" = "1", "female" = "2")) %>% 
+  ggplot(aes(age_group, tripduration)) +
+geom_boxplot(
+    aes(fill = gender), 
+    alpha=0.5,
+    position = "dodge") +
+ scale_fill_manual(
+    values = c("#118AB2", "#FFD166","06D6A0")) +
+  scale_y_log10() + 
+  labs(x = "Age Group", y = "Trip in minutes", 
+       title = "Trip Durations across different genders and age groups",
+       subtitle = "There are also some NA values",
+       caption = "Data from citibikenyc.com" ) +
+  ftplottools::ft_theme() +
+  theme(
+    plot.title.position = "plot", 
+    plot.background = element_rect(fill = "#FFF1E0"))
+p3
+
+
+```
+
+`This bar plot further informs us about the story about these variables. This plot showcases that unkown group has higher average compared to the other groups (male and female) in both 14-24 and 44,64 age group. Also, the male group tends to have a higher inter quartile range compared to the female group (In other words the male group seems to have a slightly larger spread of data across the different age groups). 
+- In the 14,24 group, we can see that the unknown group has the highest trip duration on average, followed by, female group, however male group seems to have the largest spread. 
+
+-This graph was highly informative on top of the last bar plot graphs, as it illustrates more information to us regarding the spread of the data. Which paints a better story of what the data is actually doing. For example in the bar plot for 44,64 group we saw that male was higher,but from this we can see that its not that just males did better on average, there are just alot of higher values (spread of data )as well in the male group. For example if you look at 44,64 group you can see the highest trip duration of valye compared to the highest value of female group. Even if you look at 65+ age group, you can see the range of data for female group is much lower than that of male and the highest data point (for trip duration) for male group is much higher than female for 65+ group.
+
+- We can also see from this graph that NA values are unknown values.
+
+
+
+```{r}
+#Second plots, relationship between gender and trip duration
+
+p4 <- nycbikes18_age %>%
+  mutate(gender = fct_recode(fct_reorder(as_factor(gender), tripduration),
+    "unknown" = "0", "male" = "1", "female" = "2")) %>% 
+ggplot(aes(gender, tripduration)) +
+  geom_bin2d()
+p4
+```
+'This graph is not as informative. However we can see that Male group seems to have the highest count.'
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+```{r appendix, eval = FALSE}
+"Appendix"
+
+
+
+"PLOT ONE "
+nycbikes18_age <- tibble(
+  gender = rnorm(10000),
+  tripduration = rnorm(10000)
+)
+ggplot(nycbikes18_age, aes(gender, tripduration)) +
+  geom_hex() +
+  coord_fixed()
+
+ggplot(nycbikes18_age, aes(gender, tripduration)) +
+  geom_hex() +
+  viridis::scale_fill_viridis() +
+  coord_fixed()
+
+
+"PLOT TWO "
+
+ggplot(nycbikes18_age, aes(gender, tripduration)) + 
+  geom_hex(bins = 50)
+
+p4 <- nycbikes18_age %>% 
+  filter(gender <= 2) %>% 
+  mutate(ltripduration = log2(tripduration), lgender = log2(gender))
+
+ggplot(p4, aes(lgender, ltripduration)) + 
+  geom_hex(bins = 50)
+
+```
+
+
+```{r data-read}
+nycbikes18 <- read_csv("~/Desktop/nyc data vis/data /2018-citibike-tripdata.csv",
+  locale = locale(tz = "America/New_York"))
+#install.packages("remotes")
+#remotes::install_github("Financial-Times/ftplottools")
+```
+
+```{r web-scrape}
+
+"Below is an example of Scraped Citi bike membership plan from this web page, and present the scraped data as an HTML table on R programming language"
+citi.data<-read_html("https://www.citibikenyc.com/pricing")
+
+
+plan <- citi.data %>% 
+  rvest::html_nodes('body') %>% 
+  xml2::xml_find_all("//div[contains(@class, 'section__pricing-hero__option')]") %>% 
+  rvest::html_text()%>%
+  str_replace_all( "[\r\n]" , "")
+
+plan1<-str_replace_all(string=plan[1],pattern="                ", repl="")
+plan2<-str_replace_all(string=plan[2],pattern="                ", repl="")
+plan3<-str_replace_all(string=plan[3],pattern="                ", repl="")
+plan11<-unlist(strsplit(plan1,"   "))[1:3]
+plan22<-unlist(strsplit(plan2,"   "))[1:3]
+plan33<-unlist(strsplit(plan3,"   "))[c(5,6,7)]
+cols3<-rep(0,5)
+
+a=data.frame(plan11,plan22,plan33)
+a$plan33<-gsub("Best Value  Annual Membership","Annual Membership",as.character(a$plan33))
+colnames(a)<-NULL
+a<-t(a)
+colnames(a)<-c('Plan','Cost','Minutes')
+a=htmlTable(a,rownames = FALSE)
+a
+
+```
